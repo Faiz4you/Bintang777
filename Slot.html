@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Slot Game + Admin</title>
+  <style>
+    body {
+      background: #111;
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .slot-container {
+      background: #222;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+      text-align: center;
+      width: 360px;
+    }
+
+    h1, h2 {
+      margin-bottom: 15px;
+      color: #ffc107;
+    }
+
+    .reels {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .reel {
+      width: 60px;
+      height: 60px;
+      font-size: 32px;
+      font-weight: bold;
+      background: #000;
+      border: 2px solid #ffc107;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      background: #ffc107;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #000;
+      margin: 5px;
+    }
+
+    .btn:disabled {
+      background: #555;
+      color: #999;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #0f0;
+    }
+
+    .status {
+      font-size: 14px;
+      margin-top: 10px;
+      color: #0ff;
+    }
+
+    .admin-panel {
+      margin-top: 20px;
+      background: #111;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px dashed #444;
+      display: none;
+    }
+
+    input[type="number"], input[type="password"], input[type="text"] {
+      width: 100px;
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+      margin: 5px;
+    }
+
+    #announcement {
+      margin-top: 15px;
+      color: orange;
+      font-size: 13px;
+    }
+
+    #winnerImage {
+      margin-top: 10px;
+      display: none;
+      width: 100px;
+      height: auto;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body onload="playHomeSound()">
+
+  <!-- Home -->
+  <div id="homePage">
+    <h1>🎰 BINTANG 777 🎰</h1>
+    <p>Selamat datang DI BINTANG 777<br>Silakan login atau daftar terlebih dahulu.</p>
+    <button class="btn" onclick="goToLogin()">Login</button>
+    <button class="btn" onclick="goToRegister()">Daftar</button>
+  </div>
+
+  <!-- Login -->
+  <div id="loginPage" class="hidden">
+    <h2>Login</h2>
+    <input type="text" id="loginUsername" placeholder="Username"><br>
+    <input type="password" id="loginPassword" placeholder="Password"><br>
+    <button class="btn" onclick="loginUser()">Masuk</button>
+    <button class="btn" onclick="goHome()">Kembali</button>
+  </div>
+
+  <!-- Register -->
+  <div id="registerPage" class="hidden">
+    <h2>Daftar Akun</h2>
+    <input type="text" id="regUsername" placeholder="Username"><br>
+    <input type="password" id="regPassword" placeholder="Password"><br>
+    <button class="btn" onclick="registerUser()">Daftar</button>
+    <button class="btn" onclick="goHome()">Kembali</button>
+  </div>
+
+  <!-- Slot Game -->
+  <div id="slotGame" class="slot-container hidden">
+    <h1>🎰 BINTANG 777 🎰</h1>
+    <div class="reels">
+      <div class="reel" id="reel1">7</div>
+      <div class="reel" id="reel2">7</div>
+      <div class="reel" id="reel3">7</div>
+    </div>
+    <img id="winnerImage" src="https://files.catbox.moe/88gavb.jpg" alt="Menang!"/>
+
+    <button class="btn" id="spinBtn" onclick="spin()"> GAS SEPIN DAN RAIH KE MENANGAN </button>
+    <div class="message" id="message"></div>
+    <div class="status" id="gameStatus">
+      Status: AKTIF | Saldo: <span id="saldo">0</span>
+    </div>
+    <div id="announcement"></div>
+
+    <!-- Admin Login -->
+    <div class="login-box">
+      <input type="password" id="adminPassword" placeholder="Password Admin">
+      <button class="btn" onclick="loginAdmin()">Login Admin</button>
+      <button class="btn" id="logoutBtn" onclick="logoutAdmin()" style="display:none;">Logout Admin</button>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel">
+      <h3 style="color:#ffc107;">Admin Panel</h3>
+      <button class="btn" onclick="toggleGame()">Aktif / Nonaktif Game</button><br><br>
+      <label>Atur Saldo: <input type="number" id="setBalanceInput" min="0" value="10000"></label>
+      <button class="btn" onclick="setBalance()">Set</button><br><br>
+      <label>Pengumuman Umum: <input type="text" id="announcementInput" placeholder="Isi pengumuman..."></label>
+      <button class="btn" onclick="setAnnouncement()">Kirim</button><br><br>
+      <label>Menang: <input type="number" id="adminWin" value="0" min="0"></label>
+      <label>Kalah: <input type="number" id="adminLose" value="0" min="0"></label>
+      <button class="btn" onclick="aturMenangKalah()">Set Rasio</button>
+    </div>
+  </div>
+
+  <!-- Audio -->
+  <audio id="audioSpin" src="sepin.mp3"></audio>
+  <audio id="audioWin" src="menang.mp3"></audio>
+  <audio id="audioHome" src="home.mp3"></audio>
+
+  <script>
+    let gameActive = true;
+    let userSaldo = 0;
+    let playerName = "";
+    let users = {};
+    const biayaSpin = 8000;
+    const adminPassword = "BINTANG";
+    const symbols = ['🍒', '🍋', '🔔', '⭐', '7', '🍀'];
+    let adminWin = 0;
+    let adminLose = 0 ;
+
+    function playSound(id) {
+      const audio = document.getElementById(id);
+      if (audio) {
+        audio.currentTime = 0;
+        audio.play();
+      }
+    }
+
+    function playHomeSound() {
+      playSound('audioHome');
+    }
+
+    function goToLogin() {
+      hideAll();
+      document.getElementById('loginPage').classList.remove('hidden');
+    }
+
+    function goToRegister() {
+      hideAll();
+      document.getElementById('registerPage').classList.remove('hidden');
+    }
+
+    function goHome() {
+      hideAll();
+      document.getElementById('homePage').classList.remove('hidden');
+    }
+
+    function hideAll() {
+      ['homePage','loginPage','registerPage','slotGame'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+    }
+
+    function registerUser() {
+      const u = document.getElementById('regUsername').value.trim();
+      const p = document.getElementById('regPassword').value.trim();
+      if (u === "" || p === "") return alert("Isi semua kolom!");
+      if (users[u]) return alert("Username sudah terdaftar!");
+      users[u] = { password: p, saldo: 10000 };
+      alert("✅ Berhasil daftar!");
+      goToLogin();
+    }
+
+    function loginUser() {
+      const u = document.getElementById('loginUsername').value.trim();
+      const p = document.getElementById('loginPassword').value.trim();
+      if (!users[u] || users[u].password !== p) return alert("❌ Username atau password salah!");
+      playerName = u;
+      userSaldo = users[u].saldo;
+      hideAll();
+      document.getElementById('slotGame').classList.remove('hidden');
+      updateStatus();
+    }
+
+    function updateStatus() {
+      document.getElementById('saldo').textContent = userSaldo;
+      document.getElementById('spinBtn').disabled = !gameActive || userSaldo < biayaSpin;
+      const status = document.getElementById('gameStatus');
+      status.innerHTML = `Status: ${gameActive ? 'AKTIF' : 'NONAKTIF'} | Saldo: <span id="saldo">${userSaldo}</span>`;
+      status.style.color = gameActive ? "#0ff" : "#f00";
+    }
+
+    function getRandomSymbol() {
+      return symbols[Math.floor(Math.random() * symbols.length)];
+    }
+
+    function spin() {
+      if (!playerName) return alert("❗ Harap login dahulu.");
+      if (!gameActive || userSaldo < biayaSpin) return;
+
+      playSound('audioSpin');
+      document.getElementById('spinBtn').disabled = true;
+      document.getElementById('message').textContent = '⏳ Memutar...';
+      document.getElementById('winnerImage').style.display = "none";
+
+      let counter = 0;
+      const maxLoops = 20;
+      const interval = setInterval(() => {
+        document.getElementById('reel1').textContent = getRandomSymbol();
+        document.getElementById('reel2').textContent = getRandomSymbol();
+        document.getElementById('reel3').textContent = getRandomSymbol();
+        counter++;
+        if (counter >= maxLoops) {
+          clearInterval(interval);
+          finishSpin();
+        }
+      }, 80);
+    }
+
+    function finishSpin() {
+      const r1 = document.getElementById('reel1');
+      const r2 = document.getElementById('reel2');
+      const r3 = document.getElementById('reel3');
+
+      userSaldo -= biayaSpin;
+      let win = false;
+
+      if (adminWin > 0) {
+        r1.textContent = r2.textContent = r3.textContent = '7';
+        win = true;
+        adminWin--;
+      } else if (adminLose > 0) {
+        do {
+          r1.textContent = getRandomSymbol();
+          r2.textContent = getRandomSymbol();
+          r3.textContent = getRandomSymbol();
+        } while (r1.textContent === r2.textContent && r2.textContent === r3.textContent);
+        adminLose--;
+      } else {
+        win = r1.textContent === r2.textContent && r2.textContent === r3.textContent;
+      }
+
+      if (win) {
+        playSound('audioWin');
+        document.getElementById('message').textContent = `🎉 Jackpot! ${playerName} menang!`;
+        userSaldo += 50000;
+        document.getElementById('winnerImage').style.display = "block";
+      } else {
+        document.getElementById('message').textContent = 'Coba lagi...';
+      }
+
+      users[playerName].saldo = userSaldo;
+      updateStatus();
+
+      if (userSaldo < biayaSpin) {
+        document.getElementById('spinBtn').disabled = true;
+        document.getElementById('message').textContent += " (Saldo habis)";
+      }
+    }
+
+    function loginAdmin() {
+      const input = document.getElementById('adminPassword').value;
+      if (input === adminPassword) {
+        document.getElementById('adminPanel').style.display = 'block';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        document.getElementById('adminPassword').value = '';
+        alert("✅ Admin login");
+      } else {
+        alert("❌ Password salah!");
+      }
+    }
+
+    function logoutAdmin() {
+      document.getElementById('adminPanel').style.display = 'none';
+      document.getElementById('logoutBtn').style.display = 'none';
+    }
+
+    function toggleGame() {
+      gameActive = !gameActive;
+      updateStatus();
+    }
+
+    function setBalance() {
+      const val = parseInt(document.getElementById('setBalanceInput').value);
+      userSaldo = val;
+      users[playerName].saldo = val;
+      updateStatus();
+      document.getElementById('message').textContent = `📌 Saldo diatur ke ${val}`;
+    }
+
+    function setAnnouncement() {
+      const teks = document.getElementById('announcementInput').value;
+      document.getElementById('announcement').textContent = `📢 ${teks}`;
+    }
+
+    function aturMenangKalah() {
+      adminWin = parseInt(document.getElementById('adminWin').value) || 0;
+      adminLose = parseInt(document.getElementById('adminLose').value) || 0;
+      alert(`✅ Menang: ${adminWin}, Kalah: ${adminLose}`);
+    }
+  </script>
+</body>
+</html>
+  <!-- Informasi Tambahan -->
+  <div style="margin-top: 20px; text-align: left; background: #1a1a1a; padding: 15px; border-radius: 10px; font-size: 13px; max-width: 320px;">
+    <h3 style="color: #ffc107;">ℹ️ Informasi Game</h3>
+    <ul style="padding-left: 20px;">
+      <li>🎰 Game Slot sederhana dengan sistem login & daftar.</li>
+      <li>💰 Setiap akun baru mendapat saldo awal Rp10.000.</li>
+      <li>🎯 Biaya 1x spin sebesar Rp8.000.</li>
+      <li>🎉 Menangkan hadiah Rp50000 jika mendapatkan simbol yang sama!</li
+    </ul>
+    <p style="margin-top: 10px; color: #aaa;">Selamat bermain dan semoga beruntung! 🍀</p>
+  </div>
+</div>
+
